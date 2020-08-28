@@ -5,6 +5,8 @@ __version__ = "0.0.1"
 
 import os
 
+from pathlib import Path
+
 import tkinter as tk
 import tkinter.messagebox as tkm
 import tkinter.filedialog as tkfd
@@ -17,6 +19,14 @@ DEFAULT_WINDOW_WIDTH = 600
 DEFAULT_WINDOW_HEIGHT = 400
 DEFAULT_WINDOW_ICON = "snake.png"
 DEFAULT_UNNAMED_TITLE = "Untitled"
+
+DEFAULT_FILE_EXTENSION = ".txt"
+SUPPORTED_FILE_TYPES = [("All Files", "*.*"), ("Text Documents", f"*.{DEFAULT_FILE_EXTENSION}")]
+
+FILE_DIALOG_DEFAULT_ARGS = {
+    "defaultextension": DEFAULT_FILE_EXTENSION,
+    "filetypes": SUPPORTED_FILE_TYPES,
+}
 
 MENU_LAYOUT = {
     "File": ("New", "Open", "Save", "Exit"),
@@ -148,55 +158,35 @@ class Notepad:
         tk.Button(window, text="Cancel", command=cancel).pack(side=tk.LEFT)
 
     def _action_file_open(self):
-        # todo: refactor, use pathlib
-        self._file = tkfd.askopenfilename(
-            defaultextension=".txt", filetypes=[("All Files", "*.*"), ("Text Documents", "*.txt")]
-        )
+        self._file = Path(tkfd.askopenfilename(**FILE_DIALOG_DEFAULT_ARGS))
 
-        if self._file == "":
+        if not self._file:
+            return
 
-            # no file to open
-            self._file = None
-        else:
+        self._root.title(get_title(self._file.name))
+        self._text_area.delete(1.0, tk.END)
 
-            # Try to open the file
-            # set the window title
-            self._root.title(get_title(os.path.basename(self._file)))
-            self._text_area.delete(1.0, tk.END)
+        with open(self._file, "r") as f:
+            self._text_area.insert(1.0, f.read())
 
-            file = open(self._file, "r")
-
-            self._text_area.insert(1.0, file.read())
-
-            file.close()
-
+        self._root.title(get_title(self._file.name))
+        
     def _action_file_save(self):
-        # todo: refactor, use pathlib
-
-        if self._file == None:
-            # Save as new file
-            self._file = tkfd.asksaveasfilename(
-                initialfile=f"{DEFAULT_UNNAMED_TITLE}.txt",
-                defaultextension=".txt",
-                filetypes=[("All Files", "*.*"), ("Text Documents", "*.txt")],
+        if not self._file:
+            self._file = Path(
+                tkfd.asksaveasfilename(
+                    initialfile=f"{DEFAULT_UNNAMED_TITLE}.{DEFAULT_FILE_EXTENSION}",
+                    **FILE_DIALOG_DEFAULT_ARGS,
+                )
             )
 
-            if self._file == "":
-                self._file = None
-            else:
+        if not self._file:
+            return
 
-                # Try to save the file
-                file = open(self._file, "w")
-                file.write(self._text_area.get(1.0, tk.END))
-                file.close()
+        with open(self._file, "w") as f:
+            f.write(self._text_area.get(1.0, tk.END))
 
-                # Change the window title
-                self._root.title(get_title(os.path.basename(self._file)))
-
-        else:
-            file = open(self._file, "w")
-            file.write(self._text_area.get(1.0, tk.END))
-            file.close()
+        self._root.title(get_title(self._file.name))
 
     def _action_file_exit(self):
         self._root.destroy()
