@@ -115,9 +115,9 @@ class Notepad:
 
     def _collectactions(self):
         actions = {
-            name.replace(self._prefixaction_method, ""): getattr(self, name)
+            name.replace(self.__prefix_action_method, ""): getattr(self, name)
             for name in dir(self)
-            if name.startswith(self._prefixaction_method) and callable(getattr(self, name))
+            if name.startswith(self.__prefix_action_method) and callable(getattr(self, name))
         }
         LOG.debug("Found %s actions: %s", len(actions.keys()), list(actions.keys()))
         return actions
@@ -126,10 +126,10 @@ class Notepad:
         LOG.warning("Warning: This does nothing!")
         # raise NotImplementedError()
 
-    _prefixaction_method = "action_"
+    __prefix_action_method = "action_"
 
     """
-    Use `{PREFIXaction_METHOD}{menu_bar_name}_{command}` naming convention to mark menu option commands
+    Use `{__prefix_action_method}{menu_bar_name}_{command}` naming convention to mark menu option commands
     (case insensitive)
     """
 
