@@ -42,30 +42,27 @@ class WindowDimension:
 class Notepad:
 
     _root = tk.Tk()
+    _root.wm_iconbitmap(DEFAULT_WINDOW_ICON)
+    _root.title(get_title())
 
-    _text_area = tk.Text(_root)
-    _menu_bar = tk.Menu(_root)
     _menus = {}
-    _scroll_bar = tk.Scrollbar(_text_area)
     _file = None
 
     def __init__(self, window_dimension: WindowDimension = WindowDimension()):
-        self._root.wm_iconbitmap(DEFAULT_WINDOW_ICON)
-        self._root.title(get_title())
-
         self.set_window_size(window_dimension)
         self.create_menu_bar()
-        self.create_text_and_scroll()
+        self.create_text()
+        self.create_scrollbar()
 
     def set_window_size(self, window_dimension: WindowDimension):
         geometry = window_dimension.get_geometry(
             screen_width=self._root.winfo_screenwidth(),
             screen_height=self._root.winfo_screenheight(),
         )
-        print(geometry)
         self._root.geometry(geometry)
 
     def create_menu_bar(self):
+        self._menu_bar = tk.Menu(self._root)
         action_menu = self._collect_actions()
         for menu_label, options in MENU_LAYOUT.items():
             _menu = tk.Menu(self._menu_bar, tearoff=0)
@@ -80,14 +77,17 @@ class Notepad:
 
         self._root.config(menu=self._menu_bar)
 
-    def create_text_and_scroll(self):
+    def create_text(self):
         self._root.grid_rowconfigure(0, weight=1)
         self._root.grid_columnconfigure(0, weight=1)
+        self._text_area = tk.Text(self._root)
         self._text_area.grid(sticky=tk.N + tk.E + tk.S + tk.W)
 
-        self._scroll_bar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._scroll_bar.config(command=self._text_area.yview)
-        self._text_area.config(yscrollcommand=self._scroll_bar.set)
+    def create_scrollbar(self):
+        scroll_bar = tk.Scrollbar(self._text_area)
+        scroll_bar.pack(side=tk.RIGHT, fill=tk.Y)
+        scroll_bar.config(command=self._text_area.yview)
+        self._text_area.config(yscrollcommand=scroll_bar.set)
 
     def run(self):
         self._root.mainloop()

@@ -1,12 +1,12 @@
 
 
 horizontal scrollbar
+status bar
     Ln X, Col X
     Zoom 100%
     OS
     Encoding (UTF-8)
 shortcuts
-get menu bar working on all os
 
 File
 * file New -> SHould ask if you want to "save changes to untitled" (Don't save, save, cancel)
