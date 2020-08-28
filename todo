@@ -1,0 +1,33 @@
+
+
+horizontal scrollbar
+    Ln X, Col X
+    Zoom 100%
+    OS
+    Encoding (UTF-8)
+shortcuts
+get menu bar working on all os
+
+File
+* file New -> SHould ask if you want to "save changes to untitled" (Don't save, save, cancel)
+* Save as
+* new window
+
+Edit
+* undo
+* delete
+* find/find next/find previous/replace
+* Select all
+
+format 
+* word wrap
+* Font.. (font, font style, size, sample, script) (ok cancel)
+
+VIew
+* Zoom (zoom in/out, restore default)
+* status bar
+
+Help
+* View Help
+* Send feedback
+* About Notepad -> opens window
