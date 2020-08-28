@@ -10,16 +10,13 @@ shortcuts
 zooming
 vertical scrollbar cuts off a little bit of text
 add testing
-add logging
 
 File
 * new window
 
 Edit
-* undo
 * delete
 * find/find next/find previous/replace
-* Select all
 
 format 
 * word wrap
@@ -32,4 +29,3 @@ VIew
 Help
 * View Help
 * Send feedback
-* About Notepad -> opens window
