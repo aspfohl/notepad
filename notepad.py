@@ -30,7 +30,7 @@ FILE_DIALOG_DEFAULT_ARGS = {
 
 MENU_LAYOUT = {
     "File": ("New", "Open", "Save", "Save As", "Exit"),
-    "Edit": ("Copy", "Cut", "Paste"),
+    "Edit": ("Undo", "Copy", "Cut", "Paste", "Select All"),
     "Help": ("About",),
 }
 
@@ -203,6 +203,9 @@ class Notepad:
 
         self._helper_would_you_like_to_save(exit)
 
+    def _action_edit_undo(self):
+        self._text_area.event_generate("<<Undo>>")
+
     def _action_edit_cut(self):
         self._text_area.event_generate("<<Cut>>")
 
@@ -211,6 +214,9 @@ class Notepad:
 
     def _action_edit_paste(self):
         self._text_area.event_generate("<<Paste>>")
+
+    def _action_edit_select_all(self):
+        self._text_area.event_generate("<<SelectAll>>")
 
     def _action_help_about(self):
         system_info = f"""App name: {APP_NAME}
