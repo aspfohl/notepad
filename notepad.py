@@ -1,8 +1,15 @@
+"""
+This is windows Notepad implemented in python
+"""
+__version__ = "0.0.1"
+
 import os
 
 import tkinter as tk
 import tkinter.messagebox as tkm
 import tkinter.filedialog as tkfd
+
+from functools import partialmethod
 
 APP_NAME = "Notepad"
 
@@ -14,7 +21,7 @@ DEFAULT_UNNAMED_TITLE = "Untitled"
 MENU_LAYOUT = {
     "File": ("New", "Open", "Save", "Exit"),
     "Edit": ("Copy", "Cut", "Paste"),
-    "About": ("Help",),
+    "Help": ("About",),
 }
 
 
@@ -111,9 +118,34 @@ class Notepad:
         # raise NotImplementedError()
 
     def _action_file_new(self):
-        self._root.title(get_title())
-        self._file = None
-        self._text_area.delete(1.0, tk.END)
+        window = tk.Toplevel()
+
+        label = tk.Label(
+            window,
+            text=f'Would you like to save changes to "{self._file or DEFAULT_UNNAMED_TITLE}"',
+        )
+        label.pack(fill="x", padx=50, pady=5)
+
+        def cancel():
+            window.destroy()
+
+        def new():
+            self._root.title(get_title())
+            self._file = None
+            self._text_area.delete(1.0, tk.END)
+
+        def dont_save():
+            cancel()
+            new()
+
+        def save():
+            cancel()
+            self._action_file_save()
+            new()
+
+        tk.Button(window, text="Don't Save", command=dont_save).pack(side=tk.LEFT)
+        tk.Button(window, text="Save", command=save).pack(side=tk.LEFT)
+        tk.Button(window, text="Cancel", command=cancel).pack(side=tk.LEFT)
 
     def _action_file_open(self):
         # todo: refactor, use pathlib
@@ -179,11 +211,13 @@ class Notepad:
         self._text_area.event_generate("<<Paste>>")
 
     def _action_help_about(self):
-        tkm.showinfo(APP_NAME, "Mrinal Verma")
+        system_info = f"""App name: {APP_NAME}
+Version: {__version__}
+"""
+        tkm.showinfo(APP_NAME, system_info + __doc__)
 
 
 # Run main application
 notepad = Notepad()
 notepad.run()
-
 
