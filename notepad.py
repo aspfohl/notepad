@@ -29,7 +29,7 @@ FILE_DIALOG_DEFAULT_ARGS = {
 }
 
 MENU_LAYOUT = {
-    "File": ("New", "Open", "Save", "Exit"),
+    "File": ("New", "Open", "Save", "Save As", "Exit"),
     "Edit": ("Copy", "Cut", "Paste"),
     "Help": ("About",),
 }
@@ -85,7 +85,7 @@ class Notepad:
             _menu = tk.Menu(self._menu_bar, tearoff=0)
 
             for option_label in options:
-                lookup_key = f"{menu_label.lower()}_{option_label.lower()}"
+                lookup_key = f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
                 command = action_menu.get(lookup_key, self.action_not_implemented)
                 _menu.add_command(label=option_label, command=command)
 
@@ -116,6 +116,10 @@ class Notepad:
             if name.startswith(self._prefix_action_method) and callable(getattr(self, name))
         }
 
+    def action_not_implemented(self):
+        print("Warning: This does nothing!")
+        # raise NotImplementedError()
+
     _prefix_action_method = "_action_"
 
     """
@@ -123,39 +127,36 @@ class Notepad:
     (case insensitive)
     """
 
-    def action_not_implemented(self):
-        print("Warning: This does nothing!")
-        # raise NotImplementedError()
-
-    def _action_file_new(self):
+    def _helper_would_you_like_to_save(self, end_action):
         window = tk.Toplevel()
-
-        label = tk.Label(
+        tk.Label(
             window,
             text=f'Would you like to save changes to "{self._file or DEFAULT_UNNAMED_TITLE}"',
-        )
-        label.pack(fill="x", padx=50, pady=5)
+        ).pack(fill="x", padx=50, pady=5)
 
         def cancel():
             window.destroy()
 
+        def dont_save():
+            cancel()
+            end_action()
+
+        def save():
+            cancel()
+            self._action_file_save()
+            end_action()
+
+        tk.Button(window, text="Don't Save", command=dont_save).pack(side=tk.LEFT)
+        tk.Button(window, text="Save", command=save).pack(side=tk.LEFT)
+        tk.Button(window, text="Cancel", command=cancel).pack(side=tk.LEFT)
+
+    def _action_file_new(self):
         def new():
             self._root.title(get_title())
             self._file = None
             self._text_area.delete(1.0, tk.END)
 
-        def dont_save():
-            cancel()
-            new()
-
-        def save():
-            cancel()
-            self._action_file_save()
-            new()
-
-        tk.Button(window, text="Don't Save", command=dont_save).pack(side=tk.LEFT)
-        tk.Button(window, text="Save", command=save).pack(side=tk.LEFT)
-        tk.Button(window, text="Cancel", command=cancel).pack(side=tk.LEFT)
+        self._helper_would_you_like_to_save(new)
 
     def _action_file_open(self):
         self._file = Path(tkfd.askopenfilename(**FILE_DIALOG_DEFAULT_ARGS))
@@ -163,33 +164,44 @@ class Notepad:
         if not self._file:
             return
 
-        self._root.title(get_title(self._file.name))
         self._text_area.delete(1.0, tk.END)
-
         with open(self._file, "r") as f:
             self._text_area.insert(1.0, f.read())
 
         self._root.title(get_title(self._file.name))
-        
-    def _action_file_save(self):
-        if not self._file:
-            self._file = Path(
-                tkfd.asksaveasfilename(
-                    initialfile=f"{DEFAULT_UNNAMED_TITLE}.{DEFAULT_FILE_EXTENSION}",
-                    **FILE_DIALOG_DEFAULT_ARGS,
-                )
-            )
 
-        if not self._file:
+    def _helper_save_text(self, file: Path):
+        if not file:
             return
 
-        with open(self._file, "w") as f:
+        with open(file, "w") as f:
             f.write(self._text_area.get(1.0, tk.END))
 
-        self._root.title(get_title(self._file.name))
+        self._root.title(get_title(file.name))
+
+    def _helper_ask_save_filename(self):
+        return Path(
+            tkfd.asksaveasfilename(
+                initialfile=f"{DEFAULT_UNNAMED_TITLE}.{DEFAULT_FILE_EXTENSION}",
+                **FILE_DIALOG_DEFAULT_ARGS,
+            )
+        )
+
+    def _action_file_save(self,):
+        if not self._file:
+            self._file = self._helper_ask_save_filename()
+
+        self._helper_save_text(self._file)
+
+    def _action_file_save_as(self):
+        self._file = self._helper_ask_save_filename()
+        self._helper_save_text(self._file)
 
     def _action_file_exit(self):
-        self._root.destroy()
+        def exit():
+            self._root.destroy()
+
+        self._helper_would_you_like_to_save(exit)
 
     def _action_edit_cut(self):
         self._text_area.event_generate("<<Cut>>")
