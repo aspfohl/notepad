@@ -14,13 +14,13 @@ import tkinter.filedialog as tkfd
 import tkinter.messagebox as tkm
 
 
-APP_NAME = "Notepad"
+APP_NAME = "PyNotepad"
 LOG = logging.getLogger(__name__)
 
 
 DEFAULT_WINDOW_WIDTH = 600
 DEFAULT_WINDOW_HEIGHT = 400
-DEFAULT_WINDOW_ICON = "snake.png"
+DEFAULT_WINDOW_ICON = "snake.ico"
 DEFAULT_UNNAMED_TITLE = "Untitled"
 
 DEFAULT_FILE_EXTENSION = ".txt"
