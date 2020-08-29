@@ -91,11 +91,12 @@ class Notepad:
     _menus = {}
     _file = None
 
-    # todo; move to stringvars, make dynamic
-    status_location = "Ln 1, Col 1"
-    status_zoom = "100%"
+    status_location = tk.StringVar()
+    status_location.set(f"Ln 1, Col 1")
+
+    status_zoom = "100%"  # todo
     status_platform = sys.platform
-    status_encoding = "UTF-8"
+    status_encoding = "UTF-8"  # todo
 
     @log_info
     def __init__(self, window_dimension: WindowDimension = WindowDimension()):
@@ -153,9 +154,17 @@ class Notepad:
             (self.status_zoom, 15),
             (self.status_location, 75),
         ):
+            try:
+                padx = width - len(var)
+                tk.Label(self._status_bar, text=var, bd=1).pack(
+                    side=tk.RIGHT, padx=padx
+                )
+            except TypeError:  # tkinter variables
+                padx = width - len(var.get())
+                tk.Label(self._status_bar, textvariable=var, bd=1).pack(
+                    side=tk.RIGHT, padx=padx
+                )
 
-            padx = width - len(var)
-            tk.Label(self._status_bar, text=var, bd=1).pack(side=tk.RIGHT, padx=padx)
             ttk.Separator(self._status_bar, orient=tk.VERTICAL).pack(
                 side=tk.RIGHT, fill=tk.BOTH
             )
@@ -164,11 +173,26 @@ class Notepad:
         self._is_status_bar_visible.set(True)
 
     @log_debug
+    def _update_location(self, *args, **kwargs):
+        x, y = self._text_area.index(tk.INSERT).split(".")
+        self.status_location.set(
+            f"Ln {x}, Col {int(y) + 1}"
+        )
+
+    @log_debug
     def _create_text(self):
         self._root.grid_rowconfigure(0, weight=1)
         self._root.grid_columnconfigure(0, weight=1)
         self._text_area = tk.Text(self._root)
         self._text_area.grid(sticky=tk.N + tk.E + tk.S + tk.W)
+
+        self._text_area.bindtags(("Text", "post-class-bindings", ".", "all"))
+        self._text_area.bind_class(
+            "post-class-bindings", "<KeyPress>", self._update_location
+        )
+        self._text_area.bind_class(
+            "post-class-bindings", "<Button-1>", self._update_location
+        )
 
     @log_debug
     def _create_scrollbar(self):
