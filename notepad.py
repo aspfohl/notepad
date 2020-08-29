@@ -5,7 +5,10 @@ __version__ = "0.0.1"
 
 import os
 
+
 from pathlib import Path
+from functools import wraps, partial
+import inspect
 
 import tkinter as tk
 import tkinter.messagebox as tkm
@@ -23,7 +26,10 @@ DEFAULT_WINDOW_ICON = "snake.png"
 DEFAULT_UNNAMED_TITLE = "Untitled"
 
 DEFAULT_FILE_EXTENSION = ".txt"
-SUPPORTED_FILE_TYPES = [("All Files", "*.*"), ("Text Documents", f"*.{DEFAULT_FILE_EXTENSION}")]
+SUPPORTED_FILE_TYPES = [
+    ("All Files", "*.*"),
+    ("Text Documents", f"*.{DEFAULT_FILE_EXTENSION}"),
+]
 
 FILE_DIALOG_DEFAULT_ARGS = {
     "defaultextension": DEFAULT_FILE_EXTENSION,
@@ -37,12 +43,30 @@ MENU_LAYOUT = {
 }
 
 
+def _logger(func, level):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        level("Entering method %s", func.__name__)
+        res = func(*args, **kwargs)
+        level("Exiting method %s", func.__name__)
+        return res
+
+    return wrapper
+
+
+log_info = partial(_logger, level=LOG.info)
+log_debug = partial(_logger, level=LOG.debug)
+log_action = log_info  # could have something more specific for actions
+
+
 def get_title(current: str = DEFAULT_UNNAMED_TITLE):
     return f"{current} - {APP_NAME}"
 
 
 class WindowDimension:
-    def __init__(self, *, width: int = DEFAULT_WINDOW_WIDTH, height: int = DEFAULT_WINDOW_HEIGHT):
+    def __init__(
+        self, *, width: int = DEFAULT_WINDOW_WIDTH, height: int = DEFAULT_WINDOW_HEIGHT
+    ):
         self.width = width
         self.height = height
 
@@ -67,13 +91,14 @@ class Notepad:
     _menus = {}
     _file = None
 
+    @log_info
     def __init__(self, window_dimension: WindowDimension = WindowDimension()):
-        LOG.info("Initializing Notepad")
         self._set_window_size(window_dimension)
         self._create_menu_bar()
         self._create_text()
         self._create_scrollbar()
 
+    @log_debug
     def _set_window_size(self, window_dimension: WindowDimension):
         geometry = window_dimension.get_geometry(
             screen_width=self._root.winfo_screenwidth(),
@@ -81,6 +106,7 @@ class Notepad:
         )
         self._root.geometry(geometry)
 
+    @log_debug
     def _create_menu_bar(self):
         self._menu_bar = tk.Menu(self._root)
         action_menu = self._collectactions()
@@ -88,7 +114,9 @@ class Notepad:
             _menu = tk.Menu(self._menu_bar, tearoff=0)
 
             for option_label in options:
-                lookup_key = f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
+                lookup_key = (
+                    f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
+                )
                 command = action_menu.get(lookup_key, self.action_not_implemented)
                 _menu.add_command(label=option_label, command=command)
 
@@ -97,12 +125,14 @@ class Notepad:
 
         self._root.config(menu=self._menu_bar)
 
+    @log_debug
     def _create_text(self):
         self._root.grid_rowconfigure(0, weight=1)
         self._root.grid_columnconfigure(0, weight=1)
         self._text_area = tk.Text(self._root)
         self._text_area.grid(sticky=tk.N + tk.E + tk.S + tk.W)
 
+    @log_debug
     def _create_scrollbar(self):
         scroll_bar = tk.Scrollbar(self._text_area)
         scroll_bar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -113,11 +143,13 @@ class Notepad:
         LOG.info("Running app")
         self._root.mainloop()
 
+    @log_debug
     def _collectactions(self):
         actions = {
             name.replace(self.__prefix_action_method, ""): getattr(self, name)
             for name in dir(self)
-            if name.startswith(self.__prefix_action_method) and callable(getattr(self, name))
+            if name.startswith(self.__prefix_action_method)
+            and callable(getattr(self, name))
         }
         LOG.debug("Found %s actions: %s", len(actions.keys()), list(actions.keys()))
         return actions
@@ -133,8 +165,8 @@ class Notepad:
     (case insensitive)
     """
 
+    @log_debug
     def _helper_would_you_like_to_save(self, endaction):
-        LOG.debug("Inside 'would you like to save'")
         window = tk.Toplevel()
         tk.Label(
             window,
@@ -142,7 +174,6 @@ class Notepad:
         ).pack(fill="x", padx=50, pady=5)
 
         def cancel():
-            LOG.debug("You hit cancel")
             window.destroy()
 
         def dont_save():
@@ -160,8 +191,8 @@ class Notepad:
         tk.Button(window, text="Save", command=save).pack(side=tk.LEFT)
         tk.Button(window, text="Cancel", command=cancel).pack(side=tk.LEFT)
 
+    @log_action
     def action_file_new(self):
-        LOG.info("Menu: new file")
         def new():
             self._root.title(get_title())
             self._file = None
@@ -169,8 +200,8 @@ class Notepad:
 
         self._helper_would_you_like_to_save(new)
 
+    @log_action
     def action_file_open(self):
-        LOG.info("Menu: open file")
         self._file = Path(tkfd.askopenfilename(**FILE_DIALOG_DEFAULT_ARGS))
 
         if not self._file:
@@ -182,8 +213,8 @@ class Notepad:
 
         self._root.title(get_title(self._file.name))
 
+    @log_debug
     def _helper_save_text(self, file: Path):
-        LOG.debug("Saving text to file %s", str(file))
         if not file:
             return
 
@@ -192,8 +223,8 @@ class Notepad:
 
         self._root.title(get_title(file.name))
 
+    @log_debug
     def _helper_ask_save_filename(self):
-        LOG.debug("Asking save filename")
         return Path(
             tkfd.asksaveasfilename(
                 initialfile=f"{DEFAULT_UNNAMED_TITLE}.{DEFAULT_FILE_EXTENSION}",
@@ -201,47 +232,49 @@ class Notepad:
             )
         )
 
-    def action_file_save(self,):
-        LOG.info("Menu: save file")
+    @log_action
+    def action_file_save(
+        self,
+    ):
         if not self._file:
             self._file = self._helper_ask_save_filename()
 
         self._helper_save_text(self._file)
 
+    @log_action
     def action_file_save_as(self):
-        LOG.info("Menu: save file as")
         self._file = self._helper_ask_save_filename()
         self._helper_save_text(self._file)
 
+    @log_action
     def action_file_exit(self):
-        LOG.info("Menu: file exit")
         def exit():
             self._root.destroy()
 
         self._helper_would_you_like_to_save(exit)
 
+    @log_action
     def action_edit_undo(self):
-        LOG.info("Menu: edit undo")
         self._text_area.event_generate("<<Undo>>")
 
+    @log_action
     def action_edit_cut(self):
-        LOG.info("Menu: edit cut")
         self._text_area.event_generate("<<Cut>>")
 
+    @log_action
     def action_edit_copy(self):
-        LOG.info("Menu: edit copy")
         self._text_area.event_generate("<<Copy>>")
 
+    @log_action
     def action_edit_paste(self):
-        LOG.info("Menu: edit paste")
         self._text_area.event_generate("<<Paste>>")
 
+    @log_action
     def action_edit_select_all(self):
-        LOG.info("Menu: edit select all")
         self._text_area.event_generate("<<SelectAll>>")
 
+    @log_action
     def action_help_about(self):
-        LOG.info("Menu: help about")
         system_info = f"""App name: {APP_NAME}
 Version: {__version__}
 """
@@ -257,9 +290,8 @@ def configure_logging(verbose: int = 1) -> bool:
 
     logging.basicConfig(level=level)
 
- 
+
 if __name__ == "__main__":
-    configure_logging()
+    configure_logging(2)
     notepad = Notepad()
     notepad.run()
-
