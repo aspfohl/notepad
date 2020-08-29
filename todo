@@ -1,15 +1,11 @@
 
 
 horizontal scrollbar
-status bar
-    Ln X, Col X
-    Zoom 100%
-    OS
-    Encoding (UTF-8)
 shortcuts
 zooming
 vertical scrollbar cuts off a little bit of text
 add testing
+status bar line location dynamic
 
 File
 * new window
@@ -24,7 +20,6 @@ format
 
 VIew
 * Zoom (zoom in/out, restore default)
-* status bar
 
 Help
 * View Help

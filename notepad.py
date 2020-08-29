@@ -3,18 +3,16 @@ This is windows Notepad implemented in python
 """
 __version__ = "0.0.1"
 
-import os
-
-
-from pathlib import Path
 from functools import wraps, partial
+from pathlib import Path
 import inspect
-
-import tkinter as tk
-import tkinter.messagebox as tkm
-import tkinter.filedialog as tkfd
-
 import logging
+import sys
+import tkinter as tk
+from tkinter import ttk
+import tkinter.filedialog as tkfd
+import tkinter.messagebox as tkm
+
 
 APP_NAME = "Notepad"
 LOG = logging.getLogger(__name__)
@@ -39,6 +37,7 @@ FILE_DIALOG_DEFAULT_ARGS = {
 MENU_LAYOUT = {
     "File": ("New", "Open", "Save", "Save As", "Exit"),
     "Edit": ("Undo", "Copy", "Cut", "Paste", "Select All"),
+    "View": ("Status Bar",),
     "Help": ("About",),
 }
 
@@ -87,9 +86,16 @@ class Notepad:
     _root = tk.Tk()
     _root.wm_iconbitmap(DEFAULT_WINDOW_ICON)
     _root.title(get_title())
+    _is_status_bar_visible = tk.BooleanVar()
 
     _menus = {}
     _file = None
+
+    # todo; move to stringvars, make dynamic
+    status_location = "Ln 1, Col 1"
+    status_zoom = "100%"
+    status_platform = sys.platform
+    status_encoding = "UTF-8"
 
     @log_info
     def __init__(self, window_dimension: WindowDimension = WindowDimension()):
@@ -97,6 +103,7 @@ class Notepad:
         self._create_menu_bar()
         self._create_text()
         self._create_scrollbar()
+        self._create_status_bar()
 
     @log_debug
     def _set_window_size(self, window_dimension: WindowDimension):
@@ -118,12 +125,43 @@ class Notepad:
                     f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
                 )
                 command = action_menu.get(lookup_key, self.action_not_implemented)
-                _menu.add_command(label=option_label, command=command)
+
+                # Todo: less hardcoding
+                if lookup_key == "view_status_bar":
+                    _menu.add_checkbutton(
+                        label=option_label,
+                        command=command,
+                        onvalue=True,
+                        offvalue=False,
+                        variable=self._is_status_bar_visible,
+                    )
+                else:
+                    _menu.add_command(label=option_label, command=command)
 
             self._menu_bar.add_cascade(label=menu_label, menu=_menu)
             self._menus[menu_label] = _menu  # for accessibility later
 
         self._root.config(menu=self._menu_bar)
+
+    @log_debug
+    def _create_status_bar(self):
+        self._status_bar = tk.Frame(self._text_area)
+
+        for var, width in (
+            (self.status_encoding, 50),
+            (self.status_platform, 25),
+            (self.status_zoom, 15),
+            (self.status_location, 75),
+        ):
+
+            padx = width - len(var)
+            tk.Label(self._status_bar, text=var, bd=1).pack(side=tk.RIGHT, padx=padx)
+            ttk.Separator(self._status_bar, orient=tk.VERTICAL).pack(
+                side=tk.RIGHT, fill=tk.BOTH
+            )
+
+        self._status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        self._is_status_bar_visible.set(True)
 
     @log_debug
     def _create_text(self):
@@ -272,6 +310,15 @@ class Notepad:
     @log_action
     def action_edit_select_all(self):
         self._text_area.event_generate("<<SelectAll>>")
+
+    @log_action
+    def action_view_status_bar(self):
+        if self._is_status_bar_visible:
+            self._status_bar.pack_forget()
+        else:
+            self._status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self._is_status_bar_visible = not self._is_status_bar_visible
 
     @log_action
     def action_help_about(self):
