@@ -35,7 +35,7 @@ FILE_DIALOG_DEFAULT_ARGS = {
 }
 
 MENU_LAYOUT = {
-    "File": ("New", "Open", "Save", "Save As", "Exit"),
+    "File": ("New", "New Window", "Open", "Save", "Save As", "Exit"),
     "Edit": ("Undo", "Copy", "Cut", "Paste", "Select All"),
     "View": ("Status Bar",),
     "Help": ("About",),
@@ -84,8 +84,6 @@ class WindowDimension:
 class Notepad:
 
     _root = tk.Tk()
-    _root.wm_iconbitmap(DEFAULT_WINDOW_ICON)
-    _root.title(get_title())
     _is_status_bar_visible = tk.BooleanVar()
 
     _menus = {}
@@ -99,12 +97,26 @@ class Notepad:
     status_encoding = "UTF-8"  # todo
 
     @log_info
-    def __init__(self, window_dimension: WindowDimension = WindowDimension()):
+    def __init__(
+        self, root=None, window_dimension: WindowDimension = WindowDimension()
+    ):
+        """
+        root: specify top level root. initiated by "File>New Window"
+        window_dimension: specifically for window start up
+        """
+        self._initialize_root(root)
         self._set_window_size(window_dimension)
         self._create_menu_bar()
         self._create_text()
         self._create_scrollbar()
         self._create_status_bar()
+
+    @log_debug
+    def _initialize_root(self, root):
+        if root:
+            self._root = root
+        self._root.wm_iconbitmap(DEFAULT_WINDOW_ICON)
+        self._root.title(get_title())
 
     @log_debug
     def _set_window_size(self, window_dimension: WindowDimension):
@@ -175,9 +187,7 @@ class Notepad:
     @log_debug
     def _update_location(self, *args, **kwargs):
         x, y = self._text_area.index(tk.INSERT).split(".")
-        self.status_location.set(
-            f"Ln {x}, Col {int(y) + 1}"
-        )
+        self.status_location.set(f"Ln {x}, Col {int(y) + 1}")
 
     @log_debug
     def _create_text(self):
@@ -261,6 +271,12 @@ class Notepad:
             self._text_area.delete(1.0, tk.END)
 
         self._helper_would_you_like_to_save(new)
+
+    @log_action
+    def action_file_new_window(self):
+        orig_root = tk.Toplevel(self._root)
+        new = Notepad(root=orig_root)
+        new.run()
 
     @log_action
     def action_file_open(self):
@@ -363,6 +379,6 @@ def configure_logging(verbose: int = 1) -> bool:
 
 
 if __name__ == "__main__":
-    configure_logging(2)
+    configure_logging(1)
     notepad = Notepad()
     notepad.run()
