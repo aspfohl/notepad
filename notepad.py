@@ -3,6 +3,7 @@ This is windows Notepad implemented in python
 """
 __version__ = "0.0.1"
 
+import argparse
 from functools import wraps, partial
 from pathlib import Path
 import inspect
@@ -389,7 +390,7 @@ Version: {__version__}
         tkm.showinfo(APP_NAME, system_info + __doc__)
 
 
-def configure_logging(verbose: int = 1) -> bool:
+def configure_logging(verbose: int) -> bool:
     level = logging.WARN
     if verbose == 1:
         level = logging.INFO
@@ -400,6 +401,9 @@ def configure_logging(verbose: int = 1) -> bool:
 
 
 if __name__ == "__main__":
-    configure_logging(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', action='count', default=0)
+    configure_logging(parser.parse_args().v)
+
     notepad = Notepad()
     notepad.run()
