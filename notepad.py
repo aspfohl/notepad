@@ -41,11 +41,30 @@ MENU_LAYOUT = {
     "Help": ("About",),
 }
 
+SHORTCUTS = {
+    # key: (accelerator [displayed], key binding)
+    # todo: could guess keybinding, could integrate this as part of menu_layour
+    "file_new": ("Ctrl+N", "<Control-n>"),
+    "file_new_window": ("Ctrl+Shift+N", "<Control-N>"),
+    "file_open": ("Ctrl+O", "<Control-o>"),
+    "file_save": ("Ctrl+S", "<Control-s>"),
+    "file_save_as": ("Ctrl+Shift+S", "<Control-S>"),
+    "file_exit": ("Ctrl+Q", "<Control-q>"),
+    "edit_undo": ("Ctrl+z", "<Control-z>"),
+    "edit_copy": ("Ctrl+C", "<Control-c>"),
+    "edit_cut": ("Ctrl+X", "<Control-x>"),
+    "edit_paste": ("Ctrl+V", "<Control-v>"),
+    "edit_select_all": ("Ctrl+A", "<Control-a>"),
+}
+
 
 def _logger(func, level):
     @wraps(func)
     def wrapper(*args, **kwargs):
         level("Entering method %s", func.__name__)
+        has_other_params_beside_self = len(args) > 1
+        if has_other_params_beside_self or kwargs:
+            level("Args %s kwargs %s", args, kwargs)
         res = func(*args, **kwargs)
         level("Exiting method %s", func.__name__)
         return res
@@ -139,20 +158,24 @@ class Notepad:
                 )
                 command = action_menu.get(lookup_key, self.action_not_implemented)
 
+                args = {"label": option_label, "command": command}
+                if SHORTCUTS.get(lookup_key):
+                    accelerator, binding = SHORTCUTS.get(lookup_key)
+                    args["accelerator"] = accelerator
+                    self._root.bind_all(binding, command)
+
                 # Todo: less hardcoding
                 if lookup_key == "view_status_bar":
                     _menu.add_checkbutton(
-                        label=option_label,
-                        command=command,
                         onvalue=True,
                         offvalue=False,
                         variable=self._is_status_bar_visible,
+                        **args,
                     )
                 else:
-                    _menu.add_command(label=option_label, command=command)
+                    _menu.add_command(**args)
 
             self._menu_bar.add_cascade(label=menu_label, menu=_menu)
-            self._menus[menu_label] = _menu  # for accessibility later
 
         self._root.config(menu=self._menu_bar)
 
@@ -226,7 +249,7 @@ class Notepad:
         LOG.debug("Found %s actions: %s", len(actions.keys()), list(actions.keys()))
         return actions
 
-    def action_not_implemented(self):
+    def action_not_implemented(self, *args, **kwargs):
         LOG.warning("Warning: This does nothing!")
         # raise NotImplementedError()
 
@@ -264,7 +287,7 @@ class Notepad:
         tk.Button(window, text="Cancel", command=cancel).pack(side=tk.LEFT)
 
     @log_action
-    def action_file_new(self):
+    def action_file_new(self, *args, **kwargs):
         def new():
             self._root.title(get_title())
             self._file = None
@@ -273,13 +296,13 @@ class Notepad:
         self._helper_would_you_like_to_save(new)
 
     @log_action
-    def action_file_new_window(self):
+    def action_file_new_window(self, *args, **kwargs):
         orig_root = tk.Toplevel(self._root)
         new = Notepad(root=orig_root)
         new.run()
 
     @log_action
-    def action_file_open(self):
+    def action_file_open(self, *args, **kwargs):
         self._file = Path(tkfd.askopenfilename(**FILE_DIALOG_DEFAULT_ARGS))
 
         if not self._file:
@@ -311,48 +334,46 @@ class Notepad:
         )
 
     @log_action
-    def action_file_save(
-        self,
-    ):
+    def action_file_save(self, *args, **kwargs):
         if not self._file:
             self._file = self._helper_ask_save_filename()
 
         self._helper_save_text(self._file)
 
     @log_action
-    def action_file_save_as(self):
+    def action_file_save_as(self, *args, **kwargs):
         self._file = self._helper_ask_save_filename()
         self._helper_save_text(self._file)
 
     @log_action
-    def action_file_exit(self):
+    def action_file_exit(self, *args, **kwargs):
         def exit():
             self._root.destroy()
 
         self._helper_would_you_like_to_save(exit)
 
     @log_action
-    def action_edit_undo(self):
+    def action_edit_undo(self, *args, **kwargs):
         self._text_area.event_generate("<<Undo>>")
 
     @log_action
-    def action_edit_cut(self):
+    def action_edit_cut(self, *args, **kwargs):
         self._text_area.event_generate("<<Cut>>")
 
     @log_action
-    def action_edit_copy(self):
+    def action_edit_copy(self, *args, **kwargs):
         self._text_area.event_generate("<<Copy>>")
 
     @log_action
-    def action_edit_paste(self):
+    def action_edit_paste(self, *args, **kwargs):
         self._text_area.event_generate("<<Paste>>")
 
     @log_action
-    def action_edit_select_all(self):
+    def action_edit_select_all(self, *args, **kwargs):
         self._text_area.event_generate("<<SelectAll>>")
 
     @log_action
-    def action_view_status_bar(self):
+    def action_view_status_bar(self, *args, **kwargs):
         if self._is_status_bar_visible:
             self._status_bar.pack_forget()
         else:
@@ -361,7 +382,7 @@ class Notepad:
         self._is_status_bar_visible = not self._is_status_bar_visible
 
     @log_action
-    def action_help_about(self):
+    def action_help_about(self, *args, **kwargs):
         system_info = f"""App name: {APP_NAME}
 Version: {__version__}
 """
