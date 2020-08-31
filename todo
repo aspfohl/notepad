@@ -1,7 +1,6 @@
 
 Bugs:
 * vertical scrollbar cuts off a little bit of text
-* loading/saving after hitting "cancel" should do nothing
 * CTRL+X + CTRL+V pastes double??
 
 Large features:

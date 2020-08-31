@@ -11,6 +11,7 @@ import inspect
 import logging
 import string
 import sys
+import typing
 import tkinter as tk
 import tkinter.filedialog as tkfd
 import tkinter.messagebox as tkm
@@ -150,15 +151,15 @@ class Notepad:
     _root = tk.Tk()
     _is_status_bar_visible = tk.BooleanVar()
 
-    _menus = {}
-    _file = None
+    _menus: dict = {}
+    _file: typing.Optional[Path] = None
 
     status_location = tk.StringVar()
     status_location.set(f"Ln 1, Col 1")
 
-    status_zoom = "100%"  # todo
-    status_platform = sys.platform
-    status_encoding = "UTF-8"  # todo
+    status_zoom: str = "100%"  # todo
+    status_platform: str = sys.platform
+    status_encoding: str = "UTF-8"  # todo
 
     @log_info
     def __init__(
@@ -306,24 +307,28 @@ class Notepad:
     """
 
     @log_debug
-    def _helper_would_you_like_to_save(self, endaction):
+    def _helper_would_you_like_to_save_before_performing_action(self, endaction):
         window = tk.Toplevel()
         tk.Label(
             window,
             text=f'Would you like to save changes to "{self._file or DEFAULT_UNNAMED_TITLE}"',
         ).pack(fill="x", padx=50, pady=5)
 
-        def cancel():
+        def _destroy():
             window.destroy()
+
+        def cancel():
+            LOG.debug("You hit 'cancel'")
+            _destroy()
 
         def dont_save():
             LOG.debug("You hit 'don't save'")
-            cancel()
+            _destroy()
             endaction()
 
         def save():
             LOG.debug("You hit 'save'")
-            cancel()
+            _destroy()
             self.action_file_save()
             endaction()
 
@@ -338,7 +343,7 @@ class Notepad:
             self._file = None
             self._text_area.delete(1.0, tk.END)
 
-        self._helper_would_you_like_to_save(new)
+        self._helper_would_you_like_to_save_before_performing_action(new)
 
     @log_action
     def action_file_new_window(self, *args, **kwargs):
@@ -348,11 +353,12 @@ class Notepad:
 
     @log_action
     def action_file_open(self, *args, **kwargs):
-        self._file = Path(tkfd.askopenfilename(**FILE_DIALOG_DEFAULT_ARGS))
+        file = tkfd.askopenfilename(**FILE_DIALOG_DEFAULT_ARGS)
 
-        if not self._file:
+        if not file:
             return
 
+        self._file = Path(file)
         self._text_area.delete(1.0, tk.END)
         with open(self._file, "r") as f:
             self._text_area.insert(1.0, f.read())
@@ -360,22 +366,21 @@ class Notepad:
         self._root.title(get_title(self._file.name))
 
     @log_debug
-    def _helper_save_text(self, file: Path):
+    def _helper_save_text(self, file: str):
         if not file:
             return
 
-        with open(file, "w") as f:
+        self._file = Path(file)
+        with open(self._file, "w") as f:
             f.write(self._text_area.get(1.0, tk.END))
 
-        self._root.title(get_title(file.name))
+        self._root.title(get_title(self._file.name))
 
     @log_debug
-    def _helper_ask_save_filename(self):
-        return Path(
-            tkfd.asksaveasfilename(
-                initialfile=f"{DEFAULT_UNNAMED_TITLE}.{DEFAULT_FILE_EXTENSION}",
-                **FILE_DIALOG_DEFAULT_ARGS,
-            )
+    def _helper_ask_save_filename(self) -> str:
+        return tkfd.asksaveasfilename(
+            initialfile=f"{DEFAULT_UNNAMED_TITLE}.{DEFAULT_FILE_EXTENSION}",
+            **FILE_DIALOG_DEFAULT_ARGS,
         )
 
     @log_action
@@ -395,7 +400,7 @@ class Notepad:
         def exit():
             self._root.destroy()
 
-        self._helper_would_you_like_to_save(exit)
+        self._helper_would_you_like_to_save_before_performing_action(exit)
 
     @log_action
     def action_edit_undo(self, *args, **kwargs):
