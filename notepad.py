@@ -9,6 +9,7 @@ from tkinter import ttk
 import argparse
 import inspect
 import logging
+import string
 import sys
 import tkinter as tk
 import tkinter.filedialog as tkfd
@@ -37,25 +38,68 @@ FILE_DIALOG_DEFAULT_ARGS = {
 
 MENU_LAYOUT = {
     "File": ("New", "New Window", "Open", "Save", "Save As", "Exit"),
-    "Edit": ("Undo", "Copy", "Cut", "Paste", "Select All"),
+    "Edit": ("Undo", "Cut", "Copy", "Paste", "Select All"),
     "View": ("Status Bar",),
     "Help": ("About",),
 }
 
+
+class Shortcut:
+
+    # can add more
+    accepted_keys = set(string.ascii_lowercase) | {"shift", "ctrl"}
+    # accepted_keys.union()
+    abbreviation_mapping = {"ctrl": "Control"}
+
+    def __init__(self, *keys):
+        self.validate_keys(keys)
+        self.keys = keys
+
+    def validate_keys(self, keys: list):
+        if not keys:
+            raise ValueError("Shortcut must have at least one key")
+
+        for key in keys:
+            if key not in self.accepted_keys:
+                raise ValueError(f"Shortcut key `{key}` not in {self.accepted_keys}")
+
+    @property
+    def accelerator(self) -> str:
+        """How keybinding is displayed to a user"""
+        return "+".join(k.capitalize() for k in self.keys)
+
+    @property
+    def key_binding(self) -> str:
+        """Tkinter key binding"""
+        bindings = []
+        capitalize_next = False
+        for key in self.keys:
+            if key == "shift":
+                capitalize_next = True
+                continue
+
+            binding = self.abbreviation_mapping.get(key, key)
+            if capitalize_next:
+                binding = binding.capitalize()
+                capitalize_next = False
+
+            bindings.append(binding)
+
+        return f"<{'-'.join(bindings)}>"
+
+
 SHORTCUTS = {
-    # key: (accelerator [displayed], key binding)
-    # todo: could guess keybinding, could integrate this as part of menu_layour
-    "file_new": ("Ctrl+N", "<Control-n>"),
-    "file_new_window": ("Ctrl+Shift+N", "<Control-N>"),
-    "file_open": ("Ctrl+O", "<Control-o>"),
-    "file_save": ("Ctrl+S", "<Control-s>"),
-    "file_save_as": ("Ctrl+Shift+S", "<Control-S>"),
-    "file_exit": ("Ctrl+Q", "<Control-q>"),
-    "edit_undo": ("Ctrl+z", "<Control-z>"),
-    "edit_copy": ("Ctrl+C", "<Control-c>"),
-    "edit_cut": ("Ctrl+X", "<Control-x>"),
-    "edit_paste": ("Ctrl+V", "<Control-v>"),
-    "edit_select_all": ("Ctrl+A", "<Control-a>"),
+    "file_new": Shortcut("ctrl", "n"),
+    "file_new_window": Shortcut("ctrl", "shift", "n"),
+    "file_open": Shortcut("ctrl", "o"),
+    "file_save": Shortcut("ctrl", "s"),
+    "file_save_as": Shortcut("ctrl", "shift", "s"),
+    "file_exit": Shortcut("ctrl", "q"),
+    "edit_undo": Shortcut("ctrl", "z"),
+    "edit_copy": Shortcut("ctrl", "c"),
+    "edit_cut": Shortcut("ctrl", "x"),
+    "edit_paste": Shortcut("ctrl", "v"),
+    "edit_select_all": Shortcut("ctrl", "shift", "a"),
 }
 
 
@@ -160,10 +204,10 @@ class Notepad:
                 command = action_menu.get(lookup_key, self.action_not_implemented)
 
                 args = {"label": option_label, "command": command}
-                if SHORTCUTS.get(lookup_key):
-                    accelerator, binding = SHORTCUTS.get(lookup_key)
-                    args["accelerator"] = accelerator
-                    self._root.bind_all(binding, command)
+                shortcut = SHORTCUTS.get(lookup_key)
+                if shortcut:
+                    args["accelerator"] = shortcut.accelerator
+                    self._root.bind_all(shortcut.key_binding, command)
 
                 # Todo: less hardcoding
                 if lookup_key == "view_status_bar":
@@ -402,7 +446,7 @@ def configure_logging(verbose: int) -> bool:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', action='count', default=0)
+    parser.add_argument("-v", action="count", default=0)
     configure_logging(parser.parse_args().v)
 
     notepad = Notepad()
