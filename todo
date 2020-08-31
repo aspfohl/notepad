@@ -1,22 +1,23 @@
 
+Bugs:
+* vertical scrollbar cuts off a little bit of text
+* loading/saving after hitting "cancel" should do nothing
 
-horizontal scrollbar / wrap text
-zooming
-vertical scrollbar cuts off a little bit of text
-add testing
+Large features:
+* horizontal scrollbar / wrap text
+* zooming
+* add testing
+* Format > Font.. (font, font style, size, sample, script) (ok cancel)
 
+Small features
+* Edit > Delete
+* Edit > find/find next/find previous/replace
+* Format > word wrap
+* View > Zoom (zoom in/out, restore default)
+* Help > View Help
+* Help > Send feedback
+* Encoding detection?
 
-Edit
-* delete
-* find/find next/find previous/replace
-
-format 
-* word wrap
-* Font.. (font, font style, size, sample, script) (ok cancel)
-
-VIew
-* Zoom (zoom in/out, restore default)
-
-Help
-* View Help
-* Send feedback
+Small todos:
+* simplify _create_menu_bar
+* generate keybindings

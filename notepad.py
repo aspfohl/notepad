@@ -3,14 +3,14 @@ This is windows Notepad implemented in python
 """
 __version__ = "0.0.1"
 
-import argparse
 from functools import wraps, partial
 from pathlib import Path
+from tkinter import ttk
+import argparse
 import inspect
 import logging
 import sys
 import tkinter as tk
-from tkinter import ttk
 import tkinter.filedialog as tkfd
 import tkinter.messagebox as tkm
 
