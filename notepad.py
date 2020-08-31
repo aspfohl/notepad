@@ -39,7 +39,7 @@ MENU_LAYOUT = {
     "File": ("New", "New Window", "Open", "Save", "Save As", "Exit"),
     "Edit": ("Undo", "Cut", "Copy", "Paste", "Delete", "Select All"),
     "View": ("Status Bar",),
-    "Format": ("Theme",),
+    "Format": ("Theme", "Wrap Words"),
     "Help": ("View Help", "About"),
 }
 
@@ -185,6 +185,7 @@ class Notepad:
 
     _root = tk.Tk()
     _is_status_bar_visible = tk.BooleanVar()
+    _wrap_words = tk.BooleanVar()
 
     _menus: dict = {}
     _file: typing.Optional[Path] = None
@@ -248,6 +249,10 @@ class Notepad:
                 if lookup_key == "view_status_bar":
                     _menu.add_checkbutton(
                         onvalue=True, offvalue=False, variable=self._is_status_bar_visible, **args
+                    )
+                elif lookup_key == "format_wrap_words":
+                    _menu.add_checkbutton(
+                        onvalue=True, offvalue=False, variable=self._wrap_words, **args
                     )
                 else:
                     _menu.add_command(**args)
@@ -475,6 +480,14 @@ class Notepad:
             popup.destroy()
 
         tk.Button(popup, text="OK", command=_destroy).pack()
+
+    @log_action
+    def action_format_wrap_words(self, *args, **kwargs):
+        if self._wrap_words:
+            self._text_area.configure(wrap=tk.WORD)
+        else:
+            self._text_area.configure(wrap=tk.CHAR)
+        self._wrap_words = not self._wrap_words
 
     @log_action
     def action_view_status_bar(self, *args, **kwargs):
