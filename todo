@@ -1,7 +1,6 @@
 
 Bugs:
 * vertical scrollbar cuts off a little bit of text
-* CTRL+X + CTRL+V pastes double??
 
 Large features:
 * horizontal scrollbar / wrap text
@@ -13,8 +12,6 @@ Small features
 * Edit > find/find next/find previous/replace
 * Format > word wrap
 * View > Zoom (zoom in/out, restore default)
-* Help > View Help
-* Help > Send feedback
 * Encoding detection?
 
 Small todos:

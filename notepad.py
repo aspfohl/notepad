@@ -27,10 +27,7 @@ DEFAULT_WINDOW_ICON = "snake.ico"
 DEFAULT_UNNAMED_TITLE = "Untitled"
 
 DEFAULT_FILE_EXTENSION = ".txt"
-SUPPORTED_FILE_TYPES = [
-    ("All Files", "*.*"),
-    ("Text Documents", f"*.{DEFAULT_FILE_EXTENSION}"),
-]
+SUPPORTED_FILE_TYPES = [("All Files", "*.*"), ("Text Documents", f"*.{DEFAULT_FILE_EXTENSION}")]
 
 FILE_DIALOG_DEFAULT_ARGS = {
     "defaultextension": DEFAULT_FILE_EXTENSION,
@@ -41,7 +38,7 @@ MENU_LAYOUT = {
     "File": ("New", "New Window", "Open", "Save", "Save As", "Exit"),
     "Edit": ("Undo", "Cut", "Copy", "Paste", "Delete", "Select All"),
     "View": ("Status Bar",),
-    "Help": ("About",),
+    "Help": ("View Help", "About"),
 }
 
 
@@ -128,9 +125,7 @@ def get_title(current: str = DEFAULT_UNNAMED_TITLE):
 
 
 class WindowDimension:
-    def __init__(
-        self, *, width: int = DEFAULT_WINDOW_WIDTH, height: int = DEFAULT_WINDOW_HEIGHT
-    ):
+    def __init__(self, *, width: int = DEFAULT_WINDOW_WIDTH, height: int = DEFAULT_WINDOW_HEIGHT):
         self.width = width
         self.height = height
 
@@ -162,9 +157,7 @@ class Notepad:
     status_encoding: str = "UTF-8"  # todo
 
     @log_info
-    def __init__(
-        self, root=None, window_dimension: WindowDimension = WindowDimension()
-    ):
+    def __init__(self, root=None, window_dimension: WindowDimension = WindowDimension()):
         """
         root: specify top level root. initiated by "File>New Window"
         window_dimension: specifically for window start up
@@ -199,9 +192,7 @@ class Notepad:
             _menu = tk.Menu(self._menu_bar, tearoff=0)
 
             for option_label in options:
-                lookup_key = (
-                    f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
-                )
+                lookup_key = f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
                 command = action_menu.get(lookup_key, self.action_not_implemented)
 
                 args = {"label": option_label, "command": command}
@@ -213,10 +204,7 @@ class Notepad:
                 # Todo: less hardcoding
                 if lookup_key == "view_status_bar":
                     _menu.add_checkbutton(
-                        onvalue=True,
-                        offvalue=False,
-                        variable=self._is_status_bar_visible,
-                        **args,
+                        onvalue=True, offvalue=False, variable=self._is_status_bar_visible, **args
                     )
                 else:
                     _menu.add_command(**args)
@@ -237,18 +225,12 @@ class Notepad:
         ):
             try:
                 padx = width - len(var)
-                tk.Label(self._status_bar, text=var, bd=1).pack(
-                    side=tk.RIGHT, padx=padx
-                )
+                tk.Label(self._status_bar, text=var, bd=1).pack(side=tk.RIGHT, padx=padx)
             except TypeError:  # tkinter variables
                 padx = width - len(var.get())
-                tk.Label(self._status_bar, textvariable=var, bd=1).pack(
-                    side=tk.RIGHT, padx=padx
-                )
+                tk.Label(self._status_bar, textvariable=var, bd=1).pack(side=tk.RIGHT, padx=padx)
 
-            ttk.Separator(self._status_bar, orient=tk.VERTICAL).pack(
-                side=tk.RIGHT, fill=tk.BOTH
-            )
+            ttk.Separator(self._status_bar, orient=tk.VERTICAL).pack(side=tk.RIGHT, fill=tk.BOTH)
 
         self._status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         self._is_status_bar_visible.set(True)
@@ -266,12 +248,8 @@ class Notepad:
         self._text_area.grid(sticky=tk.N + tk.E + tk.S + tk.W)
 
         self._text_area.bindtags(("Text", "post-class-bindings", ".", "all"))
-        self._text_area.bind_class(
-            "post-class-bindings", "<KeyPress>", self._update_location
-        )
-        self._text_area.bind_class(
-            "post-class-bindings", "<Button-1>", self._update_location
-        )
+        self._text_area.bind_class("post-class-bindings", "<KeyPress>", self._update_location)
+        self._text_area.bind_class("post-class-bindings", "<Button-1>", self._update_location)
 
     @log_debug
     def _create_scrollbar(self):
@@ -289,8 +267,7 @@ class Notepad:
         actions = {
             name.replace(self.__prefix_action_method, ""): getattr(self, name)
             for name in dir(self)
-            if name.startswith(self.__prefix_action_method)
-            and callable(getattr(self, name))
+            if name.startswith(self.__prefix_action_method) and callable(getattr(self, name))
         }
         LOG.debug("Found %s actions: %s", len(actions.keys()), list(actions.keys()))
         return actions
@@ -434,6 +411,14 @@ class Notepad:
             self._status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._is_status_bar_visible = not self._is_status_bar_visible
+
+    @log_action
+    def action_help_view_help(self, *args, **kwargs):
+        help_text = f"""Please see main repo for additional help or to submit an issue:
+
+https://github.com/annasmith370/notepad
+"""
+        tkm.showinfo(APP_NAME, help_text)
 
     @log_action
     def action_help_about(self, *args, **kwargs):
