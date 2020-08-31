@@ -253,9 +253,9 @@ class Notepad:
         self._status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         self._is_status_bar_visible.set(True)
 
-    @log_debug
     def _update_location(self, *args, **kwargs):
         x, y = self._text_area.index(tk.INSERT).split(".")
+        LOG.debug("Updating location (%s, %s) after %s", x, y, args)
         self.status_location.set(f"Ln {x}, Col {int(y) + 1}")
 
     @log_debug
