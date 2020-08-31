@@ -9,6 +9,7 @@ from tkinter import ttk
 import argparse
 import inspect
 import logging
+import random
 import string
 import sys
 import typing
@@ -38,6 +39,7 @@ MENU_LAYOUT = {
     "File": ("New", "New Window", "Open", "Save", "Save As", "Exit"),
     "Edit": ("Undo", "Cut", "Copy", "Paste", "Delete", "Select All"),
     "View": ("Status Bar",),
+    "Format": ("Theme",),
     "Help": ("View Help", "About"),
 }
 
@@ -101,6 +103,44 @@ SHORTCUTS = {
 }
 
 
+class Theme(typing.NamedTuple):
+
+    background: str
+    foreground: str
+    # highlightbackground: The color of the focus highlight when the text widget does not have focus.
+    # highlightcolor: The color of the focus highlight when the text widget has the focus.
+    # highlightthickness: The thickness of the focus highlight. Default is 1. Set highlightthickness=0 to suppress display of the focus highlight.
+    # insertbackground: The color of the insertion cursor. Default is black.
+    # insertofftime: The number of milliseconds the insertion cursor is off during its blink cycle. Set this option to zero to suppress blinking. Default is 300.
+
+    # optional params use system default
+    font_style: typing.Optional[int] = "Times New Roman"
+    font_size: typing.Optional[int] = 20
+
+    def as_dict(self):
+        res = {"bg": self.background, "fg": self.foreground}
+
+        font = tuple(i for i in (self.font_style, self.font_size) if i)
+        if font:
+            res["font"] = font
+        return res
+
+
+def generate_random_color():
+    return f"#{''.join([random.choice('0123456789ABCDEF') for j in range(6)])}"
+
+
+def generate_random_theme():
+    return (generate_random_color(), generate_random_color(), "Courier New", random.randint(5, 50))
+
+
+CUSTOM_THEME_PARAMS = {
+    "dark": ("black", "green", "Courier New"),
+    "light": ("white", "black"),
+    "im_feeling_lucky": generate_random_theme,
+}
+
+
 def _logger(func, level):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -155,6 +195,9 @@ class Notepad:
     status_zoom: str = "100%"  # todo
     status_platform: str = sys.platform
     status_encoding: str = "UTF-8"  # todo
+
+    theme = tk.StringVar()
+    theme.set("light")  # because most developers love thiss
 
     @log_info
     def __init__(self, root=None, window_dimension: WindowDimension = WindowDimension()):
@@ -250,6 +293,16 @@ class Notepad:
         self._text_area.bindtags(("Text", "post-class-bindings", ".", "all"))
         self._text_area.bind_class("post-class-bindings", "<KeyPress>", self._update_location)
         self._text_area.bind_class("post-class-bindings", "<Button-1>", self._update_location)
+        self._set_theme()
+
+    @log_info
+    def _set_theme(self):
+        theme_args = CUSTOM_THEME_PARAMS.get(self.theme.get())
+        if callable(theme_args):
+            theme_args = theme_args()
+
+        theme = Theme(*theme_args)
+        self._text_area.configure(**theme.as_dict())
 
     @log_debug
     def _create_scrollbar(self):
@@ -402,6 +455,26 @@ class Notepad:
     @log_action
     def action_edit_select_all(self, *args, **kwargs):
         self._text_area.event_generate("<<SelectAll>>")
+
+    @log_action
+    def action_format_theme(self, *args, **kwargs):
+        popup = tk.Toplevel(self._root)
+        tk.Label(popup, text="Choose a theme:", justify=tk.LEFT, padx=20).pack()
+
+        for theme in CUSTOM_THEME_PARAMS:
+            tk.Radiobutton(
+                popup,
+                text=theme,
+                padx=20,
+                variable=self.theme,
+                command=self._set_theme,
+                value=theme,
+            ).pack(anchor=tk.W)
+
+        def _destroy():
+            popup.destroy()
+
+        tk.Button(popup, text="OK", command=_destroy).pack()
 
     @log_action
     def action_view_status_bar(self, *args, **kwargs):

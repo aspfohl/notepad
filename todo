@@ -6,13 +6,22 @@ Large features:
 * horizontal scrollbar / wrap text
 * zooming
 * add testing
-* Format > Font.. (font, font style, size, sample, script) (ok cancel)
+* Add ability to change your key mappings
 
 Small features
 * Edit > find/find next/find previous/replace
 * Format > word wrap
+    wrap: https://www.tutorialspoint.com/python/tk_text.htm
+    This option controls the display of lines that are too wide. Set wrap=WORD and it will break the line after the last word that will fit. With the default behavior, wrap=CHAR, any line that gets too long will be broken at any character.
 * View > Zoom (zoom in/out, restore default)
 * Encoding detection?
 
 Small todos:
 * simplify _create_menu_bar
+
+theme improvements:
+* additional support for more settings
+* add image in the selection bar 
+* add ability to customize your theme
+* add ability to save your custom theme??
+* theme other things besides the text area
