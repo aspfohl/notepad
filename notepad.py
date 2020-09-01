@@ -1,5 +1,5 @@
 """
-This is windows Notepad implemented in python
+This is a simple notepad app implemented in pure python
 """
 __version__ = "0.0.1"
 
@@ -16,7 +16,7 @@ import typing
 import tkinter as tk
 import tkinter.filedialog as tkfd
 import tkinter.messagebox as tkm
-
+import unittest
 
 APP_NAME = "PyNotepad"
 LOG = logging.getLogger(__name__)
@@ -131,6 +131,7 @@ def generate_random_color():
 
 
 def generate_random_theme():
+    # this could be more crazy
     return (generate_random_color(), generate_random_color(), "Courier New", random.randint(5, 50))
 
 
@@ -198,7 +199,7 @@ class Notepad:
     status_encoding: str = "UTF-8"  # todo
 
     theme = tk.StringVar()
-    theme.set("light")  # because most developers love thiss
+    theme.set("light")  # because most developers love this
 
     @log_info
     def __init__(self, root=None, window_dimension: WindowDimension = WindowDimension()):
@@ -514,7 +515,7 @@ Version: {__version__}
         tkm.showinfo(APP_NAME, system_info + __doc__)
 
 
-def configure_logging(verbose: int) -> bool:
+def configure_logging(verbose: int):
     level = logging.WARN
     if verbose == 1:
         level = logging.INFO
@@ -522,11 +523,74 @@ def configure_logging(verbose: int) -> bool:
         level = logging.DEBUG
 
     logging.basicConfig(level=level)
+    return level
 
+
+class TestNotepad(unittest.TestCase):
+    """Tests on the main Notepad class"""
+
+
+class TestMethodsAndHelperClasses(unittest.TestCase):
+    """Tests on everything but Notepad"""
+
+    def test_shortcut(self):
+        keys = ("ctrl", "shift", "a")
+        my_shortcut = Shortcut(*keys)
+        self.assertEqual(my_shortcut.keys, keys)
+        self.assertEqual(my_shortcut.accelerator, "Ctrl+Shift+A")
+        self.assertEqual(my_shortcut.key_binding, "<Control-A>")
+
+        with self.assertRaisesRegex(ValueError, "at least one key"):
+            Shortcut()
+
+        with self.assertRaisesRegex(ValueError, "`foo` not in"):
+            Shortcut("ctrl", "shift", "foo")
+
+    def test_theme(self):
+        theme = Theme("white", "black", font_size=5000)
+        self.assertEqual(theme.background, "white")
+        self.assertEqual(theme.foreground, "black")
+
+        theme_dict = theme.as_dict()
+        self.assertEqual(theme_dict.get("bg"), "white")
+        self.assertEqual(theme_dict.get("fg"), "black")
+        self.assertEqual(theme_dict.get("font"), ("Times New Roman", 5000))
+
+    def test_generate_random_color(self):
+        random.seed(123)
+        color = generate_random_color()
+        self.assertEqual(len(color), 7)
+        self.assertEqual(color[0], "#")
+        self.assertEqual(color, "#182D83")
+
+    def test_generate_random_theme(self):
+        random.seed(123)
+        bg, fg, style, size = generate_random_theme()
+        self.assertEqual(bg, "#182D83")
+        self.assertEqual(fg, "#1CAA15")
+        self.assertEqual(style, "Courier New")
+        self.assertEqual(size, 13)
+
+    def test_logger_wrapper(self):
+        raise NotImplementedError()
+
+    def test_get_title(self):
+        self.assertEqual(get_title('foo'), "foo - PyNotepad")
+
+    def test_window_dimension(self):
+        window = WindowDimension(height=50, width=100)
+        self.assertEqual(window.get_geometry(screen_width=500, screen_height=100), "100x50+200+25")
+
+    def test_configure_logging(self):
+        self.assertEqual(configure_logging(-1), logging.WARN)
+        self.assertEqual(configure_logging(1), logging.INFO)
+        self.assertEqual(configure_logging(100), logging.DEBUG)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", action="count", default=0)
+    parser.add_argument(
+        "-v", action="count", default=0, help="Change log level. Default: no logging."
+    )
     configure_logging(parser.parse_args().v)
 
     notepad = Notepad()
