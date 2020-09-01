@@ -188,11 +188,10 @@ class Notepad:
     _is_status_bar_visible = tk.BooleanVar()
     _wrap_words = tk.BooleanVar()
 
-    _menus: dict = {}
     _file: typing.Optional[Path] = None
 
     status_location = tk.StringVar()
-    status_location.set(f"Ln 1, Col 1")
+    status_location.set("Ln 1, Col 1")
 
     status_zoom: str = "100%"  # todo
     status_platform: str = sys.platform
@@ -200,6 +199,11 @@ class Notepad:
 
     theme = tk.StringVar()
     theme.set("light")  # because most developers love this
+
+    variable_bindings = {
+        "view_status_bar": _is_status_bar_visible,
+        "format_wrap_words": _wrap_words,
+    }
 
     @log_info
     def __init__(self, root=None, window_dimension: WindowDimension = WindowDimension()):
@@ -232,9 +236,9 @@ class Notepad:
     @log_debug
     def _create_menu_bar(self):
         self._menu_bar = tk.Menu(self._root)
-        action_menu = self._collectactions()
+        action_menu = self._collect_actions()
         for menu_label, options in MENU_LAYOUT.items():
-            _menu = tk.Menu(self._menu_bar, tearoff=0)
+            _sub_menu = tk.Menu(self._menu_bar, tearoff=0)
 
             for option_label in options:
                 lookup_key = f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
@@ -246,19 +250,17 @@ class Notepad:
                     args["accelerator"] = shortcut.accelerator
                     self._root.bind_all(shortcut.key_binding, command)
 
-                # Todo: less hardcoding
-                if lookup_key == "view_status_bar":
-                    _menu.add_checkbutton(
-                        onvalue=True, offvalue=False, variable=self._is_status_bar_visible, **args
+                try:
+                    _sub_menu.add_checkbutton(
+                        onvalue=True,
+                        offvalue=False,
+                        variable=self.variable_bindings[lookup_key],
+                        **args,
                     )
-                elif lookup_key == "format_wrap_words":
-                    _menu.add_checkbutton(
-                        onvalue=True, offvalue=False, variable=self._wrap_words, **args
-                    )
-                else:
-                    _menu.add_command(**args)
+                except KeyError:
+                    _sub_menu.add_command(**args)
 
-            self._menu_bar.add_cascade(label=menu_label, menu=_menu)
+            self._menu_bar.add_cascade(label=menu_label, menu=_sub_menu)
 
         self._root.config(menu=self._menu_bar)
 
@@ -322,7 +324,7 @@ class Notepad:
         self._root.mainloop()
 
     @log_debug
-    def _collectactions(self):
+    def _collect_actions(self) -> set:
         actions = {
             name.replace(self.__prefix_action_method, ""): getattr(self, name)
             for name in dir(self)
@@ -333,7 +335,6 @@ class Notepad:
 
     def action_not_implemented(self, *args, **kwargs):
         LOG.warning("Warning: This does nothing!")
-        # raise NotImplementedError()
 
     __prefix_action_method = "action_"
 
@@ -529,6 +530,82 @@ def configure_logging(verbose: int):
 class TestNotepad(unittest.TestCase):
     """Tests on the main Notepad class"""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.notepad = Notepad()
+        cls.log_stream = logging.StreamHandler(sys.stdout)
+        LOG.addHandler(cls.log_stream)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.notepad._root.destroy()
+        LOG.removeHandler(cls.log_stream)
+
+    def test_properties(self):
+        self.assertTrue(self.notepad._is_status_bar_visible)
+        self.assertTrue(self.notepad._wrap_words)
+        self.assertEqual(self.notepad._file, None)
+        self.assertEqual(self.notepad.status_location.get(), "Ln 1, Col 1")
+        self.assertEqual(self.notepad.status_zoom, "100%")
+        self.assertEqual(self.notepad.status_encoding, "UTF-8")
+        self.assertTrue(self.notepad.theme.get() in CUSTOM_THEME_PARAMS)
+
+    def test_init_side_effects(self):
+        self.assertTrue(self.notepad._root is not None)
+        self.assertEqual(self.notepad._root.title(), "Untitled - PyNotepad")
+        self.assertTrue(self.notepad._root.geometry() is not None)
+        self.assertTrue(self.notepad._menu_bar is not None)
+        self.assertTrue(self.notepad._status_bar is not None)
+        self.assertTrue(self.notepad._text_area is not None)
+
+    def test_create_menu_bar(self):
+        raise NotImplementedError()
+
+    def test_create_status_bar(self):
+        raise NotImplementedError()
+
+    def test_update_location(self):
+        raise NotImplementedError()
+
+    def test_set_theme(self):
+        raise NotImplementedError()
+
+    def test_collect_actions(self):
+        raise NotImplementedError()
+
+    def test_action_not_implemented(self):
+        self.notepad.action_not_implemented()
+
+    def test_helper_would_you_like_to_save_before_performing_action(self):
+        raise NotImplementedError()
+
+    def test_action_file_new(self):
+        raise NotImplementedError()
+
+    def test_action_file_new_window(self):
+        raise NotImplementedError()
+
+    def test_action_file_open(self):
+        raise NotImplementedError()
+
+    def test_helper_save_text(self):
+        raise NotImplementedError()
+
+    def test_action_format_theme(self):
+        raise NotImplementedError()
+
+    def test_action_format_wrap_words(self):
+        raise NotImplementedError()
+
+    def test_action_view_status_bar(self):
+        raise NotImplementedError()
+
+    def test_action_help_view_help(self):
+        raise NotImplementedError()
+
+    def test_action_help_about(self):
+        raise NotImplementedError()
+
 
 class TestMethodsAndHelperClasses(unittest.TestCase):
     """Tests on everything but Notepad"""
@@ -575,7 +652,7 @@ class TestMethodsAndHelperClasses(unittest.TestCase):
         raise NotImplementedError()
 
     def test_get_title(self):
-        self.assertEqual(get_title('foo'), "foo - PyNotepad")
+        self.assertEqual(get_title("foo"), "foo - PyNotepad")
 
     def test_window_dimension(self):
         window = WindowDimension(height=50, width=100)
@@ -585,6 +662,7 @@ class TestMethodsAndHelperClasses(unittest.TestCase):
         self.assertEqual(configure_logging(-1), logging.WARN)
         self.assertEqual(configure_logging(1), logging.INFO)
         self.assertEqual(configure_logging(100), logging.DEBUG)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
