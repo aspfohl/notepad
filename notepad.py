@@ -3,24 +3,25 @@ This is a simple notepad app implemented in pure python
 """
 __version__ = "0.0.1"
 
+from functools import lru_cache
 from functools import wraps, partial
 from pathlib import Path
 from tkinter import ttk
+from unittest.mock import patch
 import argparse
 import inspect
 import logging
 import random
 import string
 import sys
-import typing
 import tkinter as tk
 import tkinter.filedialog as tkfd
 import tkinter.messagebox as tkm
+import typing
 import unittest
 
 APP_NAME = "PyNotepad"
 LOG = logging.getLogger(__name__)
-
 
 DEFAULT_WINDOW_WIDTH = 600
 DEFAULT_WINDOW_HEIGHT = 400
@@ -182,6 +183,60 @@ class WindowDimension:
         return f"{self.width}x{self.height}+{left:.0f}+{top:.0f}"
 
 
+class MenuOption:
+    def __init__(self, menu_label: str, option_label: str, notepad: "Notepad"):
+        self.menu_label = menu_label
+        self.option_label = option_label
+        self.actions = notepad._collect_actions()
+        self.variable_bindings = notepad.variable_bindings
+
+    @property
+    def lookup_key(self) -> str:
+        return f"{self.menu_label.lower()}_{self.option_label.lower().replace(' ','_')}"
+
+    def action_not_implemented(self, *args, **kwargs):
+        LOG.warning("Warning: This does nothing!")
+
+    @property
+    def command(self) -> str:
+        return self.actions.get(self.lookup_key, self.action_not_implemented)
+
+    @property
+    def _default_args(self) -> dict:
+        return {"label": self.option_label, "command": self.command}
+
+    @property
+    def has_shortcut(self) -> bool:
+        return self.lookup_key in SHORTCUTS
+
+    @property
+    def shortcut(self) -> Shortcut:
+        return SHORTCUTS[self.lookup_key]
+
+    @property
+    def has_variable_binding(self) -> bool:
+        return self.lookup_key in self.variable_bindings
+
+    @property
+    def args(self) -> dict:
+        args = self._default_args.copy()
+        if self.has_shortcut:
+            args["accelerator"] = self.shortcut.accelerator
+
+        if self.has_variable_binding:
+            args["variable"] = self.variable_bindings[self.lookup_key]
+            args["onvalue"] = True
+            args["offvalue"] = False
+
+        return args
+
+    @property
+    def widget_function(self) -> str:
+        if self.has_variable_binding:
+            return "add_checkbutton"
+        return "add_command"
+
+
 class Notepad:
 
     _root = tk.Tk()
@@ -233,35 +288,23 @@ class Notepad:
         )
         self._root.geometry(geometry)
 
+    def _helper_sub_menu(self, menu_label: str, options: tuple) -> tk.Menu:
+        sub_menu = tk.Menu(self._menu_bar, tearoff=0)
+        for option_label in options:
+            option = MenuOption(menu_label, option_label, self)
+
+            if option.has_shortcut:
+                self._root.bind_all(option.shortcut.key_binding, option.command)
+
+            getattr(sub_menu, option.widget_function)(**option.args)
+        return sub_menu
+
     @log_debug
     def _create_menu_bar(self):
         self._menu_bar = tk.Menu(self._root)
-        action_menu = self._collect_actions()
         for menu_label, options in MENU_LAYOUT.items():
-            _sub_menu = tk.Menu(self._menu_bar, tearoff=0)
-
-            for option_label in options:
-                lookup_key = f"{menu_label.lower()}_{option_label.lower().replace(' ','_')}"
-                command = action_menu.get(lookup_key, self.action_not_implemented)
-
-                args = {"label": option_label, "command": command}
-                shortcut = SHORTCUTS.get(lookup_key)
-                if shortcut:
-                    args["accelerator"] = shortcut.accelerator
-                    self._root.bind_all(shortcut.key_binding, command)
-
-                try:
-                    _sub_menu.add_checkbutton(
-                        onvalue=True,
-                        offvalue=False,
-                        variable=self.variable_bindings[lookup_key],
-                        **args,
-                    )
-                except KeyError:
-                    _sub_menu.add_command(**args)
-
+            _sub_menu = self._helper_sub_menu(menu_label, options)
             self._menu_bar.add_cascade(label=menu_label, menu=_sub_menu)
-
         self._root.config(menu=self._menu_bar)
 
     @log_debug
@@ -323,7 +366,7 @@ class Notepad:
         LOG.info("Running app")
         self._root.mainloop()
 
-    @log_debug
+    @lru_cache()
     def _collect_actions(self) -> set:
         actions = {
             name.replace(self.__prefix_action_method, ""): getattr(self, name)
@@ -332,9 +375,6 @@ class Notepad:
         }
         LOG.debug("Found %s actions: %s", len(actions.keys()), list(actions.keys()))
         return actions
-
-    def action_not_implemented(self, *args, **kwargs):
-        LOG.warning("Warning: This does nothing!")
 
     __prefix_action_method = "action_"
 
@@ -559,56 +599,71 @@ class TestNotepad(unittest.TestCase):
         self.assertTrue(self.notepad._text_area is not None)
 
     def test_create_menu_bar(self):
-        raise NotImplementedError()
+        pass
 
     def test_create_status_bar(self):
-        raise NotImplementedError()
+        pass
 
     def test_update_location(self):
-        raise NotImplementedError()
+        pass
 
     def test_set_theme(self):
-        raise NotImplementedError()
+        pass
 
     def test_collect_actions(self):
-        raise NotImplementedError()
-
-    def test_action_not_implemented(self):
-        self.notepad.action_not_implemented()
+        pass
 
     def test_helper_would_you_like_to_save_before_performing_action(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_file_new(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_file_new_window(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_file_open(self):
-        raise NotImplementedError()
+        pass
 
     def test_helper_save_text(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_format_theme(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_format_wrap_words(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_view_status_bar(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_help_view_help(self):
-        raise NotImplementedError()
+        pass
 
     def test_action_help_about(self):
-        raise NotImplementedError()
+        pass
 
 
 class TestMethodsAndHelperClasses(unittest.TestCase):
     """Tests on everything but Notepad"""
+
+    @classmethod
+    def setUpClass(cls):
+        class NotepadWithFakeBindings(Notepad):
+            _my_binding = tk.BooleanVar()
+            variable_bindings = {"foo_variable_binding": _my_binding}
+
+            def _collect_actions(*args, **kwargs):
+                """mocked collect actions - there are none"""
+                return {}
+
+        cls.notepad = NotepadWithFakeBindings
+        cls.log_stream = logging.StreamHandler(sys.stdout)
+        LOG.addHandler(cls.log_stream)
+
+    @classmethod
+    def tearDownClass(cls):
+        LOG.removeHandler(cls.log_stream)
 
     def test_shortcut(self):
         keys = ("ctrl", "shift", "a")
@@ -649,7 +704,7 @@ class TestMethodsAndHelperClasses(unittest.TestCase):
         self.assertEqual(size, 13)
 
     def test_logger_wrapper(self):
-        raise NotImplementedError()
+        pass
 
     def test_get_title(self):
         self.assertEqual(get_title("foo"), "foo - PyNotepad")
@@ -657,6 +712,50 @@ class TestMethodsAndHelperClasses(unittest.TestCase):
     def test_window_dimension(self):
         window = WindowDimension(height=50, width=100)
         self.assertEqual(window.get_geometry(screen_width=500, screen_height=100), "100x50+200+25")
+
+    @patch.dict(SHORTCUTS, {})
+    def test_menu_option_simple(self):
+        mo = MenuOption("foo", "baz", self.notepad)
+
+        self.assertEqual(mo.menu_label, "foo")
+        self.assertEqual(mo.option_label, "baz")
+        self.assertEqual(mo.actions, {})
+        self.assertEqual(mo.actions, {})  # self.notepad.variable_bindings)
+
+        self.assertEqual(mo.lookup_key, "foo_baz")
+        self.assertEqual(mo.command, mo.action_not_implemented)
+        self.assertEqual(mo._default_args.get("label"), "baz")
+        self.assertFalse(mo.has_shortcut)
+        with self.assertRaises(KeyError):
+            mo.shortcut
+        self.assertFalse(mo.has_variable_binding)
+        self.assertEqual(mo.args, mo._default_args)
+        self.assertEqual(mo.widget_function, "add_command")
+
+    @patch.dict(SHORTCUTS, {"foo_shortcut": Shortcut("ctrl", "f")})
+    def test_menu_option_with_shortcut(self):
+        mo = MenuOption("foo", "shortcut", self.notepad)
+
+        self.assertTrue(mo.has_shortcut)
+        self.assertIsInstance(mo.shortcut, Shortcut)
+        self.assertEqual(mo.shortcut.keys, ("ctrl", "f"))
+        self.assertEqual(set(mo.args.keys()), {"label", "command", "accelerator"})
+        self.assertIsNotNone(mo.args.get("accelerator"))
+        self.assertEqual(mo.widget_function, "add_command")
+
+    @patch.dict(SHORTCUTS, {})
+    def test_menu_option_with_variable_binding(self):
+        mo = MenuOption("foo", "variable binding", self.notepad)
+
+        self.assertEqual(mo.lookup_key, "foo_variable_binding")
+        self.assertFalse(mo.has_shortcut)
+        self.assertEqual(
+            set(mo.args.keys()), {"label", "command", "variable", "onvalue", "offvalue"}
+        )
+        self.assertEqual(mo.args.get("variable"), self.notepad._my_binding)
+        self.assertTrue(mo.args.get("onvalue"))
+        self.assertFalse(mo.args.get("offvalue"))
+        self.assertEqual(mo.widget_function, "add_checkbutton")
 
     def test_configure_logging(self):
         self.assertEqual(configure_logging(-1), logging.WARN)
