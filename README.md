@@ -1,19 +1,24 @@
 # notepad :ledger:
-This is a simple notepad app implemented in pure python requiring no environment setup besides [python 3.6+](https://www.python.org/downloads/). 
+This is a simple notepad app implemented in pure python. Requirements: [python 3.6+](https://www.python.org/downloads/). 
+
+Initialize:
+```bash
+python setup.py install
+```
 
 To run: 
 ```bash
-python notepad.py
+python -m notepad
 ```
 
 To test: 
 ```bash
-python -m unittest discover -p 'notepad.py'
+pytest tests
 ```
 
 For help:
 ```bash
-python notepad.py --help
+python -m notepad --help
 ```
 
 ## Features 
