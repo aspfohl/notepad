@@ -7,6 +7,7 @@ import tkinter.filedialog as tkfd
 import tkinter.messagebox as tkm
 import typing
 
+import notepad
 from notepad import constants, window, menu
 from notepad.features import shortcuts, themes, logger
 
@@ -324,6 +325,6 @@ https://github.com/annasmith370/notepad
     @logger.log_action
     def action_help_about(self, *args, **kwargs):
         system_info = f"""App name: {constants.APP_NAME}
-Version: {__version__}
+Version: {notepad.__version__}
 """
-        tkm.showinfo(constants.APP_NAME, system_info + __doc__)
+        tkm.showinfo(constants.APP_NAME, system_info + notepad.__doc__)
