@@ -318,7 +318,7 @@ class Notepad:
     def action_help_view_help(self, *args, **kwargs):
         help_text = f"""Please see main repo for additional help or to submit an issue:
 
-https://github.com/annasmith370/notepad
+https://github.com/aspfohl/notepad
 """
         tkm.showinfo(constants.APP_NAME, help_text)
 
